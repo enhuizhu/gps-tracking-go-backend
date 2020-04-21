@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"ggithub.com/enhuizhu/gps-tracking-go-backend/controllers/HomeController"
+	"github.com/enhuizhu/gps-tracking-go-backend/controllers/HomeController"
 
 	"github.com/gin-gonic/gin"
 )
