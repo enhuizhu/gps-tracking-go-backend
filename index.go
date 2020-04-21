@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/enhuizhu/gps-tracking-go-backend/controllers/HomeController"
+	"github.com/enhuizhu/gps-tracking-go-backend/controllers"
 
 	"github.com/gin-gonic/gin"
 )
@@ -18,7 +18,8 @@ func main() {
 	r := gin.Default()
 
 	r.GET("/ping", func(c *gin.Context) {
-		HomeController.Index()
+		h := controllers.HomeController{}
+		h.Index()
 		// dbConnection.CreateCon()
 		// CreateCon()
 		// sayHello()
