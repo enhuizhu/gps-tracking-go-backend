@@ -1,0 +1,17 @@
+CREATE DATABASE gps_tracking
+
+CREATE TABLE IF NOT EXISTS user_login (
+  userId INT AUTO_INCREMENT PRIMARY KEY,
+  email VARCHAR(100) NOT NULL,
+  password VARCHAR(100) NOT NULL
+)
+
+CREATE TABLE IF NOT EXISTS user_detail (
+  firstName VARCHAR(100) DEFAULT NULL,
+  lastName VARCHAR(100) DEFAULT NULL,
+  birthday DATE DEFAULT NULL,
+  userId INT,
+  CONSTRAINT fk_user
+  FOREIGN KEY (userId) 
+  REFERENCES user_login(userId)
+)
