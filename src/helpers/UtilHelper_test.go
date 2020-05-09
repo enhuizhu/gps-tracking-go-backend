@@ -4,7 +4,7 @@ import (
 	"testing"
 )
 
-func testEmailValidation(t *testing.T)  {
+func TestEmailValidation(t *testing.T)  {
 	if !IsValidEmail("afdal@fa.com") {
 		t.Error("afdal@fa.com should be valid email")
 	}

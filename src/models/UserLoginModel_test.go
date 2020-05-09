@@ -4,16 +4,32 @@ import (
 	// "fmt"
 	"testing"
 	"log"
+	"fmt"
 )
 
-func testHashPassword(t *testing.T)  {
+func TestHashPassword(t *testing.T)  {
 	hashedPassword := hashPassword("test")
 	t.Log("hashedPassword2:" + hashedPassword)
 	log.Println("hashedPassword:" + hashedPassword);
 }
 
-func testDoesPasswordMatch(t *testing.T)  {
-	if !doesPasswordMatch("$2a$04$lIVhDwqYympUCxYQUD9Jde4SwFS8K1kvVTdkrFnTPBEIjvDd4aaO.", "test") {
-		t.Error("$2a$04$lIVhDwqYympUCxYQUD9Jde4SwFS8K1kvVTdkrFnTPBEIjvDd4aaO. should match test")
+func TestDoesPasswordMatch(t *testing.T)  {
+	if !doesPasswordMatch("$2a$04$B0.zUxxFWccKFxX2/xHbau0ls681qrs/oWrtqDCUt/OnwRXrMSMCe", "test") {
+		t.Error("$2a$04$B0.zUxxFWccKFxX2/xHbau0ls681qrs/oWrtqDCUt/OnwRXrMSMCe should match test")
+	}
+}
+
+func TestCreateToken(t *testing.T) {
+	userLoginModel := UserLoginModel{
+		Email: "test@test.com",
+		Password: "test",
+	}
+
+	token, err := userLoginModel.createToken()
+
+	if err != nil {
+		t.Error("err is:" + err.Error())
+	} else {
+		fmt.Println(token);
 	}
 }
