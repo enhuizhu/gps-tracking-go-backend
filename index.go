@@ -3,6 +3,8 @@ package main
 import (
 	"github.com/enhuizhu/gps-tracking-go-backend/src/controllers"
 	"github.com/gin-gonic/gin"
+	"github.com/enhuizhu/gps-tracking-go-backend/src/models"
+	"github.com/enhuizhu/gps-tracking-go-backend/src/middlewares"
 )
 
 func main() {
@@ -18,13 +20,13 @@ func main() {
 		userController.Login(c);
 	})
 
-	r.POST("/user/logout", func(c *gin.Context) {
+	r.GET("/user/logout", middlewares.Authorized() , func(c *gin.Context) {
 		userController := controllers.UserController{};
 		userController.Logout(c);
 	})
 
-	r.GET("/user/refreshToken", func(c *gin.Context) {
-
+	r.POST("/user/refreshToken", func(c *gin.Context) {
+		models.RefreshToken(c)
 	}) 
 
 	r.Run()

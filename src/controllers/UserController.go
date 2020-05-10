@@ -56,17 +56,18 @@ func (u *UserController) CreateNewUser(c *gin.Context) {
 
 func (u *UserController) Login(c *gin.Context) {
 	user, error := getUserDataBaseOnRequest(c)
-
+	// fmt.Println(user)
 	if error != nil {
 		c.JSON(200, gin.H{
 			"error": error,
+			// error: "error on parsing data from request",
 		})
 	} else {
 		td, err := user.Login();
 
 		if err != nil {
 			c.JSON(200, gin.H{
-				"error": error,
+				"error": err,
 			})
 		} else {
 			tokens := map[string]string{
@@ -91,9 +92,4 @@ func (u *UserController) Logout(c *gin.Context) {
 			"success": true,
 		})
 	}
-}
-
-
-func (u *UserController) RefreshToken(c *gin.Context) {
-	models.RefreshToken(c);
 }

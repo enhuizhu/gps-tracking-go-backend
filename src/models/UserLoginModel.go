@@ -63,7 +63,6 @@ type TokenConfig struct {
 
 type AccessDetails struct {
 	AccessUuid string
-	RefreshUuid string
 	Email string
 }
 
@@ -101,7 +100,7 @@ func getTokenConfig() (*TokenConfig, error){
         return nil, err
 	}
 	
-	err = gonfig.GetConf(dir + "/../../tokenConfig.json", &tokenConfig)
+	err = gonfig.GetConf(dir + "/tokenConfig.json", &tokenConfig)
 	
 	if err != nil {
         return nil, err
@@ -193,9 +192,16 @@ func VerifyToken(r *http.Request)(*jwt.Token, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
+		
+		tokenConfig, err := getTokenConfig();
 
-		return []byte(os.Getenv("ACCESS_SECRET")), nil
+		if err != nil {
+			return nil, err
+		}
+
+		return []byte(tokenConfig.AccessSecret), nil
 	})
+
 
 	if err != nil {
 		return nil, err
@@ -240,15 +246,8 @@ func ExtractTokenMetadata(r *http.Request)(*AccessDetails, error) {
 			return nil, errors.New("error on getting email")
 		}
 
-		refreshUuid, ok := claims["refresh_uuid"].(string)
-
-		if !ok {
-			return nil, errors.New("error on getting refresh uuid")
-		}
-
 		return &AccessDetails{
 			AccessUuid: accessUuid,
-			RefreshUuid: refreshUuid,
 			Email: email,
 		}, nil
 	}
@@ -267,15 +266,11 @@ func FetchAuth(authD *AccessDetails) (string, error) {
 }
 
 func IsAuthorized(c *gin.Context) bool {
-	var td TokenDetails;
-	
-	if err := c.ShouldBindJSON(&td); err != nil {
-		return false
-	}
-
 	tokenAuth, err := ExtractTokenMetadata(c.Request)
-
+	
 	if err != nil {
+		fmt.Println("token auth err")
+	 	fmt.Println(err)
 		return false
 	 }
 
@@ -314,14 +309,12 @@ func RefreshToken(c *gin.Context) {
 
 	refreshToken := mapToken["refresh_token"]
 
-	os.Setenv("REFRESH_SECRET", tokenConfig.RefreshSecret)
-
 	token, err := jwt.Parse(refreshToken, func(token *jwt.Token) (interface{}, error) {
 		//Make sure that the token method conform to "SigningMethodHMAC"
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 		   return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
-		return []byte(os.Getenv("REFRESH_SECRET")), nil
+		return []byte(tokenConfig.RefreshSecret), nil
 	 })
 
 	 if err != nil {
@@ -346,13 +339,7 @@ func RefreshToken(c *gin.Context) {
 			return
 		}
 
-		accessUuid, ok := claims["access_uuid"].(string) //convert the interface to string
 		
-		if !ok {
-			c.JSON(http.StatusUnprocessableEntity, err)
-			return
-		}
-
 		email, ok := claims["email"].(string)
 
 		if !ok {
@@ -368,13 +355,6 @@ func RefreshToken(c *gin.Context) {
 			return
 		}
 
-		deleted, delErr = DeleteAuth(accessUuid)
-		
-		if delErr != nil || deleted == 0 { //if any goes wrong
-			c.JSON(http.StatusUnauthorized, "unauthorized")
-			return
-		}
-		
 		 //Create new pairs of refresh and access tokens
 		ts, createErr := CreateToken(email)
 		if  createErr != nil {
@@ -408,12 +388,6 @@ func Logout(r *http.Request) (bool, error){
 	}
 
 	_, err = DeleteAuth(accessDetails.AccessUuid)
-
-	if err != nil {
-		return false, err
-	}
-
-	_, err = DeleteAuth(accessDetails.RefreshUuid)
 
 	if err != nil {
 		return false, err
