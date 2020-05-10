@@ -6,6 +6,7 @@ import (
 	"github.com/enhuizhu/gps-tracking-go-backend/src/models"
 	"github.com/enhuizhu/gps-tracking-go-backend/src/constants"
 	"github.com/gin-gonic/gin"
+	"net/http"
 )
 
 // UserController to deal with all the related user request
@@ -92,4 +93,40 @@ func (u *UserController) Logout(c *gin.Context) {
 			"success": true,
 		})
 	}
+}
+
+func (u *UserController) AddFriend(c *gin.Context) {
+	mapFriendRequest := map[string][]int{}
+
+	if err := c.ShouldBindJSON(&mapFriendRequest); err != nil {
+		c.JSON(http.StatusUnprocessableEntity, err.Error())
+		return 
+	}
+
+	// get user detail
+	accessDetails, err := models.ExtractTokenMetadata(c.Request)
+
+	if err != nil {
+		c.JSON(200, gin.H{
+			"error": err,
+		})
+
+		return 
+	}
+
+	userId, err := models.GetUserId(accessDetails.Email)
+
+	if err != nil {
+		c.JSON(200, gin.H{
+			"error": err,
+		})
+
+		return 
+	}
+
+	models.AddFriendRequest(userId, mapFriendRequest["friendIds"])
+
+	c.JSON(200, gin.H{
+		"success": true,
+	})
 }

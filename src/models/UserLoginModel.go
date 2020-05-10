@@ -422,6 +422,17 @@ func (userLogin *UserLoginModel) Login() (*TokenDetails, error) {
 	return nil, errors.New("email or pssword is wrong")
 }
 
+func GetUserId(email string) (int, error){
+	var userId int
+	err := traceDb.QueryRow("select userId from user_login where email = ?", email).Scan(&userId);
+
+	if err != nil {
+		return 0, err
+	}
+
+	return userId, nil
+}
+
 
 func (userLogin *UserLoginModel) doesMailAndPasswordMatch() (bool, error) {
 	var email string
