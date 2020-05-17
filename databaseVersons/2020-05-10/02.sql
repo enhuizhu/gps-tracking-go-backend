@@ -14,3 +14,5 @@ CREATE TABLE IF NOT EXISTS friend_request (
     to_id INT,
     request_status ENUM('0', '1')
 )
+
+RENAME TABLE firends TO friends
