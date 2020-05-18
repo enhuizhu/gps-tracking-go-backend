@@ -164,7 +164,9 @@ func (u *UserController) AcceptUserRequest(c *gin.Context) {
 		return
 	}
 
-	if models.AcceptFriendRequest(requestIDInt) {
+	err = models.AcceptFriendRequest(requestIDInt)
+
+	if err == nil {
 		helpers.OutputMsg(true, "accept user request successfully", c)
 	} else {
 		helpers.OutputMsg(false, "some error happend when accept the user request", c)

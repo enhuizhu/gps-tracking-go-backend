@@ -1,8 +1,11 @@
 package models
 
 import (
+	"context"
+	"database/sql"
 	"encoding/json"
 	"fmt"
+	"log"
 
 	"github.com/enhuizhu/gps-tracking-go-backend/src/helpers"
 )
@@ -105,27 +108,34 @@ func GetUserIDAndFriendIDBaseOnRequestID(requestID int) (int, int) {
 }
 
 // AcceptFriendRequest accept the request sent by user's friend
-func AcceptFriendRequest(requestID int) bool {
+func AcceptFriendRequest(requestID int) error {
 	// get user id base on request id
 	userID, friendID := GetUserIDAndFriendIDBaseOnRequestID(requestID)
 	recordExist := IsFriendsRecordExist(userID)
 
+	var ctx context.Context
+
+	db := traceDb.CreateCon()
+
+	tx, err := db.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelSerializable})
+
+	if err != nil {
+		return err
+	}
+
 	if !recordExist {
 		friendIDs := []int{friendID}
-		sqlStr := ` 
-			START TRANSACTION;
-			insert into friends (userId, friends) values (?, ?);
-			update friend_request set request_status="1" where id=?;
-			COMMIT;
-		`
 		friendIDsStr, err := helpers.JSONStringify(friendIDs)
 
 		if err != nil {
-			panic(err)
+			return err
 		}
 
-		traceDb.Query(sqlStr, userID, friendIDsStr, requestID)
-		return true
+		_, err = tx.ExecContext(ctx, "insert into friends (userId, friends) values (?, ?)", userID, friendIDsStr)
+
+		if err != nil {
+			return err
+		}
 	} else {
 		friendIDs, err := GetFriendIDs(userID)
 
@@ -134,23 +144,35 @@ func AcceptFriendRequest(requestID int) bool {
 		}
 
 		if err != nil {
-			panic(err.Error())
-		} else {
-			friendIDsStr, err := helpers.JSONStringify(friendIDs)
+			return err
+		}
 
-			if err != nil {
-				panic(err)
-			}
+		friendIDsStr, err := helpers.JSONStringify(friendIDs)
 
-			sqlStr := ` 
-				START TRANSACTION;
-				update friends set friends='?' where userId=?;
-				update friend_request set request_status="1" where id=?;
-				COMMIT;
-			`
-			traceDb.Query(sqlStr, friendIDsStr, userID, requestID)
+		if err != nil {
+			return err
+		}
 
-			return true
+		_, err = tx.ExecContext(ctx, "update friends set friends='?' where userId=?", friendIDsStr, userID)
+
+		if err != nil {
+			return err
 		}
 	}
+
+	_, err = db.ExecContext(ctx, "update friend_request set request_status='1' where id=?", requestID)
+
+	if err != nil {
+		if rollbackErr := tx.Rollback(); rollbackErr != nil {
+			log.Fatalf("update drivers: unable to rollback: %v", rollbackErr)
+		}
+
+		return err
+	}
+
+	if err := tx.Commit(); err != nil {
+		return err
+	}
+
+	return nil
 }
