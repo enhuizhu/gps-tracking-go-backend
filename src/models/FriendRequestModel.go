@@ -113,8 +113,7 @@ func AcceptFriendRequest(requestID int) error {
 	userID, friendID := GetUserIDAndFriendIDBaseOnRequestID(requestID)
 	recordExist := IsFriendsRecordExist(userID)
 
-	var ctx context.Context
-
+	ctx := context.Background()
 	db := traceDb.CreateCon()
 
 	tx, err := db.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelSerializable})
